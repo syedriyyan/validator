@@ -1,19 +1,35 @@
-import httpx
-import random
+import dns.resolver
+import smtplib
+from .domain import get_domain
 
-# Optional: rotate through proxy pool
-proxies = [
-    # "http://your-proxy1:port",
-    # "http://your-proxy2:port",
-]
+from typing import Union
 
-async def check(email: str) -> bool:
-    domain = email.split("@")[1]
-    url = f"http://{domain}"  # Dummy check for now
-
+def check_email_existence(email: str, debug: bool = False) -> Union[str, bool]:
+    domain = get_domain(email)
     try:
-        async with httpx.AsyncClient(proxies=random.choice(proxies) if proxies else None, timeout=5) as client:
-            resp = await client.get(url)
-        return resp.status_code < 400
-    except:
-        return False
+        mx_records = dns.resolver.resolve(domain, 'MX')
+        sorted_mx = sorted(mx_records, key=lambda r: r.preference)
+        mx_host = str(sorted_mx[0].exchange).rstrip('.')
+
+        with smtplib.SMTP(mx_host, timeout=10) as server:
+            if debug:
+                server.set_debuglevel(1)
+
+            server.ehlo('example.com')
+            server.mail('check@example.com')
+            code, message = server.rcpt(email)
+
+            if code == 250:
+                return True
+            elif code == 550:
+                return False
+            else:
+                return f"SMTP Response: {code} {message.decode()}"
+    except smtplib.SMTPConnectError:
+        return "SMTP Connection Error"
+    except smtplib.SMTPServerDisconnected:
+        return "SMTP Server Disconnected"
+    except smtplib.SMTPException as e:
+        return f"SMTP Error: {str(e)}"
+    except Exception as e:
+        return f"Unknown Error: {str(e)}"
