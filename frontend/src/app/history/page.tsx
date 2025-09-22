@@ -1,5 +1,7 @@
 "use client"
 
+//jkfbvwjb
+
 import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,10 +10,17 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { EmailValidatorAPI, type BulkValidationResult } from "@/lib/api"
-import { useToastNotifications } from "@/hooks/use-toast-notifications"
+function useToastNotifications() {
+  return {
+    showError: (message: string) => {
+      // Replace with your toast implementation, e.g. using a toast library or custom logic
+      alert(message)
+    }
+  }
+}
 import Link from "next/link"
 import { History, FileText, Calendar, TrendingUp, Eye } from "lucide-react"
-import { format } from "date-fns"
+import { format } from  "date-fns"
 
 export default function HistoryPage() {
   const [batches, setBatches] = useState<BulkValidationResult[]>([])
