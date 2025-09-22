@@ -163,7 +163,7 @@ export default function DashboardPage() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                    <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                    <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
