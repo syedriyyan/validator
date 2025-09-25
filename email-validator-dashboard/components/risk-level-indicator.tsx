@@ -3,11 +3,11 @@ import { Shield, ShieldAlert, ShieldX } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface RiskLevelIndicatorProps {
-  level: "low" | "medium" | "high"
+  level?: "low" | "medium" | "high"  // now optional for safety
   className?: string
 }
 
-export function RiskLevelIndicator({ level, className }: RiskLevelIndicatorProps) {
+export function RiskLevelIndicator({ level = "low", className }: RiskLevelIndicatorProps) {
   const config = {
     low: {
       icon: Shield,
@@ -26,7 +26,14 @@ export function RiskLevelIndicator({ level, className }: RiskLevelIndicatorProps
     },
   }
 
-  const { icon: Icon, className: riskClassName, text } = config[level]
+  // Safely handle unknown or missing levels
+  const safeLevel: "low" | "medium" | "high" = level in config ? level : "low"
+
+  if (!(level in config)) {
+    console.warn("Invalid risk level received:", level)
+  }
+
+  const { icon: Icon, className: riskClassName, text } = config[safeLevel]
 
   return (
     <Badge className={cn("flex items-center gap-1.5 px-2.5 py-1", riskClassName, className)}>
