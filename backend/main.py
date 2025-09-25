@@ -1,21 +1,21 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+# Import your validator functions here
 from validators.syntactic import is_valid_syntax
 from validators.domain import get_domain, is_valid_domain
 from validators.mailbox import check_email_existence
-from fastapi.middleware.cors import CORSMiddleware
-
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],  # Or your frontend URL(s)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 class EmailRequest(BaseModel):
     email: str
@@ -28,20 +28,49 @@ def validate_email(data: EmailRequest):
     check_smtp = data.check_smtp
     debug = data.debug
 
-    if not is_valid_syntax(email):
-        return {"email": email, "status": "Invalid Syntax"}
+    syntax_valid = is_valid_syntax(email)
+    domain = get_domain(email) if syntax_valid else None
+    domain_valid = is_valid_domain(domain) if domain else False
 
-    domain = get_domain(email)
-    if not is_valid_domain(domain):
-        return {"email": email, "status": "Invalid Domain"}
-
-    if check_smtp:
+    smtp_valid = None
+    if check_smtp and syntax_valid and domain_valid:
         smtp_result = check_email_existence(email, debug)
         if smtp_result is True:
-            return {"email": email, "status": "Valid (SMTP Accepted)"}
+            smtp_valid = True
         elif smtp_result is False:
-            return {"email": email, "status": "Invalid Mailbox"}
+            smtp_valid = False
         else:
-            return {"email": email, "status": smtp_result}
+            smtp_valid = None
 
-    return {"email": email, "status": "Valid (Syntax & Domain OK)"}
+    is_valid = syntax_valid and domain_valid and (smtp_valid if check_smtp else True)
+
+    # Example logic for risk level:
+    if not is_valid:
+        risk_level = "high"
+    else:
+        risk_level = "low"
+
+    # Example placeholders for other fields (update as per your logic)
+    provider = domain.split(".")[0] if domain else ""
+    is_disposable = False
+    is_role_based = False
+    breach_status = False
+
+    return {
+        "email": email,
+        "status": "Valid" if is_valid else "Invalid",
+        "is_valid": is_valid,
+        "syntax_valid": syntax_valid,
+        "domain_valid": domain_valid,
+        "smtp_valid": smtp_valid,
+        "risk_level": risk_level,
+        "is_disposable": is_disposable,
+        "is_role_based": is_role_based,
+        "breach_status": breach_status,
+        "domain": domain or "",
+        "provider": provider,
+    }
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "version": "1.0.0"}
